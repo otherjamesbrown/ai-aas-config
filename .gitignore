@@ -1,0 +1,40 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Editor directories and files
+.vscode/
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
+# Environment-specific sensitive files
+*.env
+*.secret
+*-secret.yaml
+secrets/
+
+# Generated files
+*.generated.yaml
+
+# Backup files
+*.backup
+*.old
+
+# Testing outputs
+coverage/
+.pytest_cache/
+__pycache__/
+
+# Dependencies (if any tooling is added later)
+node_modules/
+vendor/
