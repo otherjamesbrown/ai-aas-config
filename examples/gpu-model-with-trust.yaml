@@ -1,0 +1,66 @@
+# GPU-Enabled AIModel with Trust Remote Code
+#
+# This example shows a production-ready GPU model configuration
+# with trustRemoteCode enabled for models that require custom code.
+#
+# SECURITY WARNING: trustRemoteCode allows the model to execute
+# arbitrary Python code from HuggingFace. Only use with trusted
+# model sources that you verify and control.
+
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: AIModel
+metadata:
+  name: my-gpu-model
+  namespace: production
+  labels:
+    app: vllm-inference
+    model: my-gpu-model
+    provider: my-provider
+    version: v1
+spec:
+  # Human-readable model name
+  modelName: my-gpu-model
+
+  # HuggingFace model ID
+  modelID: provider/model-name
+
+  # Enable this model deployment
+  enabled: true
+
+  # Inference runtime
+  runtime: vllm
+
+  # Scaling configuration
+  minReplicas: 1
+  maxReplicas: 3
+
+  # Resource allocation with GPU support
+  resources:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+      nvidia.com/gpu: "1"
+    limits:
+      cpu: "8"
+      memory: "32Gi"
+      nvidia.com/gpu: "1"
+
+  # GPU node tolerations (required for GPU scheduling)
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
+  # Runtime arguments for vLLM
+  runtimeArgs:
+    - --dtype=auto
+    - --max-model-len=4096
+    - --gpu-memory-utilization=0.9
+
+  # SECURITY: Enable trust remote code for models with custom code
+  # WARNING: Only enable for trusted sources!
+  trustRemoteCode: true

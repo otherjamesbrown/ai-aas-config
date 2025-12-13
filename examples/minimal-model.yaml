@@ -1,0 +1,45 @@
+# Minimal AIModel Configuration Example
+#
+# This example shows the simplest possible AIModel configuration
+# suitable for CPU-only models or testing purposes.
+#
+# For production GPU models, see: gpu-model-with-trust.yaml
+
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: AIModel
+metadata:
+  name: my-model
+  namespace: development
+  labels:
+    app: vllm-inference
+    model: my-model
+spec:
+  # Human-readable model name (used in API responses)
+  modelName: my-model
+
+  # HuggingFace model ID or path to model files
+  modelID: username/model-name
+
+  # Enable/disable this model deployment
+  enabled: true
+
+  # Inference runtime (currently only 'vllm' is supported)
+  runtime: vllm
+
+  # Scaling configuration
+  minReplicas: 1
+  maxReplicas: 1
+
+  # Resource allocation
+  resources:
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+    limits:
+      cpu: "4"
+      memory: "16Gi"
+
+  # Runtime arguments passed to vLLM
+  runtimeArgs:
+    - --dtype=auto
+    - --max-model-len=2048
