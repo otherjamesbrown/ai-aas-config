@@ -1,0 +1,73 @@
+name: Validate AIModel CRs
+
+on:
+  pull_request:
+    paths:
+      - 'environments/**/*.yaml'
+      - 'environments/**/*.yml'
+      - 'examples/**/*.yaml'
+      - 'examples/**/*.yml'
+  push:
+    branches:
+      - main
+      - staging
+      - develop
+    paths:
+      - 'environments/**/*.yaml'
+      - 'environments/**/*.yml'
+      - 'examples/**/*.yaml'
+      - 'examples/**/*.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml jsonschema
+
+      - name: Validate YAML syntax
+        run: |
+          echo "Validating YAML syntax for all files..."
+          EXIT_CODE=0
+
+          # Find all YAML files in environments and examples
+          find environments examples -type f \( -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | while read file; do
+            echo "Checking: $file"
+            if ! python -c "import yaml; yaml.safe_load(open('$file'))" 2>&1; then
+              echo "ERROR: Invalid YAML syntax in $file"
+              EXIT_CODE=1
+            fi
+          done
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "YAML syntax validation failed"
+            exit 1
+          fi
+
+          echo "All YAML files have valid syntax"
+
+      - name: Validate AIModel CRs
+        run: |
+          echo "Validating AIModel custom resources..."
+
+          # Run the validation script
+          if [ -f scripts/validate-aimodels.py ]; then
+            python scripts/validate-aimodels.py environments/ examples/
+          else
+            echo "WARNING: scripts/validate-aimodels.py not found, skipping AIModel validation"
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Validation complete!"
+          echo "See logs above for any warnings or errors."

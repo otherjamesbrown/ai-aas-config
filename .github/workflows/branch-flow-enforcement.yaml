@@ -1,0 +1,111 @@
+name: Branch Flow Enforcement
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  enforce-branch-flow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate branch flow
+        env:
+          PR_BASE: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.head_ref }}
+        run: |
+          echo "Validating branch flow for PR:"
+          echo "  Base branch: $PR_BASE"
+          echo "  Head branch: $PR_HEAD"
+          echo ""
+
+          # Branch flow rules:
+          # - PRs to 'staging' must come from 'develop'
+          # - PRs to 'main' must come from 'staging'
+          # - PRs to 'develop' can come from any feature branch
+
+          EXIT_CODE=0
+
+          if [ "$PR_BASE" = "staging" ]; then
+            if [ "$PR_HEAD" != "develop" ]; then
+              echo "ERROR: Pull requests to 'staging' must come from 'develop' branch"
+              echo "       Current head branch: $PR_HEAD"
+              echo ""
+              echo "Please follow the branch promotion workflow:"
+              echo "  develop → staging → main"
+              EXIT_CODE=1
+            else
+              echo "✓ Valid: PR to staging from develop"
+            fi
+          elif [ "$PR_BASE" = "main" ]; then
+            if [ "$PR_HEAD" != "staging" ]; then
+              echo "ERROR: Pull requests to 'main' must come from 'staging' branch"
+              echo "       Current head branch: $PR_HEAD"
+              echo ""
+              echo "Please follow the branch promotion workflow:"
+              echo "  develop → staging → main"
+              echo ""
+              echo "Changes must be merged to 'develop' first, then promoted to 'staging',"
+              echo "and finally promoted to 'main' (production)."
+              EXIT_CODE=1
+            else
+              echo "✓ Valid: PR to main from staging"
+            fi
+          elif [ "$PR_BASE" = "develop" ]; then
+            echo "✓ Valid: PR to develop from feature branch ($PR_HEAD)"
+          else
+            echo "WARNING: Unexpected base branch: $PR_BASE"
+            echo "Expected one of: develop, staging, main"
+          fi
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo ""
+            echo "Branch flow validation failed!"
+            exit 1
+          fi
+
+          echo ""
+          echo "Branch flow validation passed!"
+
+      - name: Comment on PR (if validation fails)
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const base = context.payload.pull_request.base.ref;
+            const head = context.payload.pull_request.head.ref;
+
+            let message = `## Branch Flow Validation Failed\n\n`;
+            message += `This pull request does not follow the required branch promotion workflow.\n\n`;
+
+            if (base === 'staging' && head !== 'develop') {
+              message += `**Error:** Pull requests to \`staging\` must come from \`develop\`.\n\n`;
+              message += `**Current:** \`${head}\` → \`${base}\`\n\n`;
+              message += `**Required workflow:**\n`;
+              message += `1. Merge your changes to \`develop\` first\n`;
+              message += `2. Create a PR from \`develop\` to \`staging\`\n\n`;
+            } else if (base === 'main' && head !== 'staging') {
+              message += `**Error:** Pull requests to \`main\` (production) must come from \`staging\`.\n\n`;
+              message += `**Current:** \`${head}\` → \`${base}\`\n\n`;
+              message += `**Required workflow:**\n`;
+              message += `1. Merge your changes to \`develop\`\n`;
+              message += `2. Promote from \`develop\` to \`staging\`\n`;
+              message += `3. After testing in staging, promote from \`staging\` to \`main\`\n\n`;
+            }
+
+            message += `### Branch Promotion Workflow\n\n`;
+            message += `\`\`\`\n`;
+            message += `develop → staging → main\n`;
+            message += `\`\`\`\n\n`;
+            message += `- **develop**: Fast iteration and development\n`;
+            message += `- **staging**: Code review and testing\n`;
+            message += `- **main**: Production-ready, stable releases\n`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: message
+            });
