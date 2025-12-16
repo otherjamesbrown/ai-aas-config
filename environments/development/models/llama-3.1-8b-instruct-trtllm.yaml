@@ -21,6 +21,8 @@ metadata:
 spec:
   modelName: llama-3.1-8b-instruct-trtllm
   modelID: meta-llama/Llama-3.1-8B-Instruct
+  s3Bucket: ai-aas-models
+  s3Key: triton/llama-3.1-8b-instruct-trtllm
   enabled: true
   runtime: tensorrt-llm
   minReplicas: 1
