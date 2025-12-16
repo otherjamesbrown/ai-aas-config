@@ -11,7 +11,7 @@
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: AIModel
 metadata:
-  name: llama-3.1-8b-instruct-trtllm
+  name: llama-3-1-8b-instruct-trtllm
   namespace: development
   labels:
     app: triton-inference
@@ -19,7 +19,7 @@ metadata:
     runtime: tensorrt-llm
     environment: development
 spec:
-  modelName: llama-3.1-8b-instruct-trtllm
+  modelName: llama-3-1-8b-instruct-trtllm
   modelID: meta-llama/Llama-3.1-8B-Instruct
   s3Bucket: ai-aas
   s3Key: models/llama-3.1-8b-instruct-trtllm
@@ -28,7 +28,7 @@ spec:
   minReplicas: 1
   maxReplicas: 1
   recipeRef:
-    name: llama-3.1-8b-instruct-trtllm
+    name: llama-3-1-8b-instruct-trtllm
     namespace: ai-model-system
   resources:
     requests:
