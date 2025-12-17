@@ -20,6 +20,7 @@ metadata:
 spec:
   modelName: mistral-7b-instruct-v03
   modelID: mistralai/Mistral-7B-Instruct-v0.3
+  externalName: mistral-7b-instruct-v0.3
   enabled: false
   runtime: vllm
   minReplicas: 1

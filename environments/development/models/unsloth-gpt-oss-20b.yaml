@@ -21,6 +21,7 @@ metadata:
 spec:
   modelName: unsloth-gpt-oss-20b
   modelID: unsloth/gpt-oss-20b
+  externalName: gpt-oss-20b
   enabled: true
   runtime: vllm
   minReplicas: 1
