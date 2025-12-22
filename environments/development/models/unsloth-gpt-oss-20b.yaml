@@ -26,8 +26,7 @@ spec:
   runtime: vllm
   minReplicas: 1
   maxReplicas: 1
-  deployment:
-    deploymentMode: RawDeployment
+  deploymentMode: RawDeployment
   resources:
     requests:
       cpu: "4"
