@@ -42,8 +42,9 @@ spec:
   runtimeArgs:
     - --max-input-tokens=4096
     - --max-total-tokens=8192
-    - --disable-custom-kernels
   runtimeEnv:
     - name: PREFIX_CACHING
       value: "0"
+    - name: ATTENTION
+      value: "paged"
   trustRemoteCode: true
