@@ -40,6 +40,7 @@ spec:
       operator: Exists
       effect: NoSchedule
   runtimeArgs:
+    - --port=8000
     - --max-input-tokens=4096
     - --max-total-tokens=8192
   runtimeEnv:
