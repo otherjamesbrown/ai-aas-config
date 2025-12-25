@@ -42,5 +42,7 @@ spec:
   runtimeArgs:
     - --max-input-tokens=4096
     - --max-total-tokens=8192
-    - --disable-prefix-caching
+  runtimeEnv:
+    - name: PREFIX_CACHING
+      value: "0"
   trustRemoteCode: true
