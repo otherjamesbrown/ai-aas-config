@@ -18,6 +18,7 @@ spec:
   modelID: mistralai/Mistral-7B-Instruct-v0.3
   enabled: true
   runtime: vllm
+  modelType: text
   minReplicas: 1
   maxReplicas: 1
   deployment:

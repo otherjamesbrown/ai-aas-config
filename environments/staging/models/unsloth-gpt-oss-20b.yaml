@@ -18,6 +18,7 @@ spec:
   modelID: unsloth/gpt-oss-20b
   enabled: true
   runtime: vllm
+  modelType: text
   minReplicas: 1
   maxReplicas: 1
   deploymentMode: RawDeployment

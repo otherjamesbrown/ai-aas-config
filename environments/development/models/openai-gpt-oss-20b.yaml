@@ -23,6 +23,7 @@ spec:
   externalName: openai-gpt-oss-20b
   enabled: false
   runtime: vllm
+  modelType: text
   minReplicas: 1
   maxReplicas: 1
   deployment:

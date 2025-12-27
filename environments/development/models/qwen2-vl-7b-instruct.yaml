@@ -22,6 +22,7 @@ spec:
   externalName: qwen2-vl-7b-instruct
   enabled: true
   runtime: tgi
+  modelType: vision-language
   minReplicas: 1
   maxReplicas: 1
   deployment:

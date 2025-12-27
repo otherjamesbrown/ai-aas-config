@@ -26,6 +26,7 @@ spec:
   s3Key: models/llama-3.1-8b-instruct-trtllm
   enabled: true
   runtime: tensorrt-llm
+  modelType: text
   minReplicas: 1
   maxReplicas: 1
   deployment:
