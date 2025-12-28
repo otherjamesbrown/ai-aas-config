@@ -1,0 +1,33 @@
+name: code-generation
+description: |
+  Code completion and generation workload for programming assistance.
+  Typical use cases: IDE autocomplete, code review, function generation.
+  Moderate context with longer output for complete code blocks.
+version: "1.0"
+
+data:
+  type: synthetic
+  prompt_tokens: 200
+  output_tokens: 300
+  tokenizer: gpt2
+
+defaults:
+  profile: constant
+  rate: 2
+  max_seconds: 120
+  request_type: chat_completions
+
+metrics:
+  primary:
+    - ttft_p50_ms
+    - ttft_p95_ms
+    - tpot_p50_ms
+    - tpot_p95_ms
+    - throughput_rps
+    - error_rate
+    - latency_p95_ms
+  thresholds:
+    ttft_p95_ms: 500
+    tpot_p95_ms: 60
+    latency_p95_ms: 12000
+    error_rate: 0.01

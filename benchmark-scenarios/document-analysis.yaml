@@ -1,0 +1,33 @@
+name: document-analysis
+description: |
+  Long context document analysis workload for processing substantial text inputs.
+  Typical use cases: document Q&A, contract review, report analysis.
+  Large input context requiring comprehensive understanding with detailed responses.
+version: "1.0"
+
+data:
+  type: synthetic
+  prompt_tokens: 2000
+  output_tokens: 500
+  tokenizer: gpt2
+
+defaults:
+  profile: constant
+  rate: 1
+  max_seconds: 180
+  request_type: chat_completions
+
+metrics:
+  primary:
+    - ttft_p50_ms
+    - ttft_p95_ms
+    - tpot_p50_ms
+    - tpot_p95_ms
+    - throughput_rps
+    - error_rate
+    - latency_p95_ms
+  thresholds:
+    ttft_p95_ms: 2000
+    tpot_p95_ms: 80
+    latency_p95_ms: 25000
+    error_rate: 0.02

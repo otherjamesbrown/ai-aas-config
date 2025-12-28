@@ -1,0 +1,31 @@
+name: short-qa
+description: |
+  Quick question-and-answer workload simulating simple factual queries.
+  Typical use cases: chatbots, FAQ systems, quick lookups.
+  Characterized by short prompts and concise responses.
+version: "1.0"
+
+data:
+  type: synthetic
+  prompt_tokens: 50
+  output_tokens: 30
+  tokenizer: gpt2
+
+defaults:
+  profile: constant
+  rate: 5
+  max_seconds: 60
+  request_type: chat_completions
+
+metrics:
+  primary:
+    - ttft_p50_ms
+    - ttft_p95_ms
+    - tpot_p50_ms
+    - tpot_p95_ms
+    - throughput_rps
+    - error_rate
+  thresholds:
+    ttft_p95_ms: 200
+    tpot_p95_ms: 50
+    error_rate: 0.01
