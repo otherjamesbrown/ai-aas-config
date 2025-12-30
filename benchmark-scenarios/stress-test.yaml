@@ -1,0 +1,40 @@
+name: stress-test
+description: |
+  Extended duration stability test for reliability validation.
+  Purpose: Verify system stability under sustained moderate load.
+  Tests for memory leaks, connection exhaustion, and degradation over time.
+  Run duration is 10 minutes to catch issues that emerge gradually.
+version: "1.0"
+
+data:
+  type: synthetic
+  prompt_tokens: 100
+  output_tokens: 100
+  tokenizer: gpt2
+
+defaults:
+  profile: constant
+  rate: 5
+  max_seconds: 600
+  request_type: chat_completions
+
+metrics:
+  primary:
+    - ttft_p50_ms
+    - ttft_p95_ms
+    - ttft_p99_ms
+    - tpot_p50_ms
+    - tpot_p95_ms
+    - throughput_rps
+    - error_rate
+    - latency_p95_ms
+    - latency_p99_ms
+    - latency_drift
+  thresholds:
+    ttft_p95_ms: 400
+    ttft_p99_ms: 800
+    tpot_p95_ms: 70
+    latency_p95_ms: 6000
+    latency_p99_ms: 10000
+    error_rate: 0.01
+    latency_drift: 0.2

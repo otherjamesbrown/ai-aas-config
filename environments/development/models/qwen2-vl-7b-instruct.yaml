@@ -1,8 +1,7 @@
-# AIModel CR for Mistral-7B-Instruct-v0.3 (Development)
+# AIModel CR for Qwen2-VL-7B-Instruct (Development)
 #
-# RESOURCE NOTE: Memory limit set to 24Gi (not 32Gi) to prevent OOM kills.
-# GPU nodes have 32GB total RAM - we need ~20% headroom for system pods.
-# See: INVESTIGATION_REPORT_ai-aas-vju2.md for details on OOM issue.
+# Vision-Language Model (VLM) running on TGI runtime.
+# Supports image + text understanding via OpenAI-compatible API.
 #
 # SECURITY WARNING: This configuration uses trustRemoteCode
 # which allows the model to execute arbitrary Python code from HuggingFace.
@@ -10,20 +9,20 @@
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: AIModel
 metadata:
-  name: mistral-7b-instruct-v03
+  name: qwen2-vl-7b-instruct
   namespace: development
   labels:
-    app: vllm-inference
-    model: mistral-7b-instruct
-    version: v0.3
+    app: tgi-inference
+    model: qwen2-vl-7b-instruct
+    runtime: tgi
     environment: development
 spec:
-  modelName: mistral-7b-instruct-v03
-  modelID: mistralai/Mistral-7B-Instruct-v0.3
-  externalName: mistral-7b-instruct-v0.3
-  enabled: false
-  runtime: vllm
-  modelType: text
+  modelName: qwen2-vl-7b-instruct
+  modelID: Qwen/Qwen2-VL-7B-Instruct
+  externalName: qwen2-vl-7b-instruct
+  enabled: true
+  runtime: tgi
+  modelType: vision-language
   minReplicas: 1
   maxReplicas: 1
   deploymentMode: RawDeployment
@@ -41,7 +40,11 @@ spec:
       operator: Exists
       effect: NoSchedule
   runtimeArgs:
-    - --dtype=auto
-    - --max-model-len=8192
-    - --gpu-memory-utilization=0.9
+    - --max-input-tokens=4096
+    - --max-total-tokens=8192
+  runtimeEnv:
+    - name: PREFIX_CACHING
+      value: "0"
+    - name: ATTENTION
+      value: "paged"
   trustRemoteCode: true

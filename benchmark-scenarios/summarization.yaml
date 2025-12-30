@@ -1,0 +1,33 @@
+name: summarization
+description: |
+  Text summarization workload with long inputs and concise outputs.
+  Typical use cases: article summarization, meeting notes, content digests.
+  Requires processing large context but producing condensed summaries.
+version: "1.0"
+
+data:
+  type: synthetic
+  prompt_tokens: 1500
+  output_tokens: 150
+  tokenizer: gpt2
+
+defaults:
+  profile: constant
+  rate: 2
+  max_seconds: 120
+  request_type: chat_completions
+
+metrics:
+  primary:
+    - ttft_p50_ms
+    - ttft_p95_ms
+    - tpot_p50_ms
+    - tpot_p95_ms
+    - throughput_rps
+    - error_rate
+    - latency_p95_ms
+  thresholds:
+    ttft_p95_ms: 1500
+    tpot_p95_ms: 70
+    latency_p95_ms: 8000
+    error_rate: 0.01

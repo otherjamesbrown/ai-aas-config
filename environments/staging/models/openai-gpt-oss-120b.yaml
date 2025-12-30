@@ -1,4 +1,9 @@
-# AIModel CR for Mistral-7B-Instruct-v0.3 (Staging)
+# AIModel CR for openai/gpt-oss-120b (Staging)
+#
+# REQUIREMENTS:
+# - RTX PRO 6000 Blackwell GPU (96GB VRAM) or equivalent
+# - Uses OpenAI's MXFP4 quantization for efficient inference
+# - Special vLLM build required (vllm==0.10.1+gptoss)
 #
 # SECURITY WARNING: This configuration uses trustRemoteCode
 # which allows the model to execute arbitrary Python code from HuggingFace.
@@ -6,17 +11,17 @@
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: AIModel
 metadata:
-  name: mistral-7b-instruct-v03
+  name: openai-gpt-oss-120b
   namespace: staging
   labels:
     app: vllm-inference
-    model: mistral-7b-instruct
-    version: v0.3
+    model: gpt-oss-120b
+    provider: openai
     environment: staging
 spec:
-  modelName: mistral-7b-instruct-v03
-  modelID: mistralai/Mistral-7B-Instruct-v0.3
-  enabled: false
+  modelName: openai-gpt-oss-120b
+  modelID: openai/gpt-oss-120b
+  enabled: true
   runtime: vllm
   modelType: text
   minReplicas: 1
@@ -25,12 +30,12 @@ spec:
     deploymentMode: RawDeployment
   resources:
     requests:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "16"
+      memory: "128Gi"
       nvidia.com/gpu: "1"
     limits:
-      cpu: "8"
-      memory: "32Gi"
+      cpu: "32"
+      memory: "188Gi"
       nvidia.com/gpu: "1"
   tolerations:
     - key: nvidia.com/gpu
@@ -40,8 +45,14 @@ spec:
       operator: Equal
       value: "true"
       effect: NoSchedule
+  nodeSelector:
+    # Target RTX PRO 6000 Blackwell nodes specifically
+    node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
   runtimeArgs:
     - --dtype=auto
-    - --max-model-len=8192
-    - --gpu-memory-utilization=0.9
+    - --max-model-len=32768
+    - --gpu-memory-utilization=0.95
+  probeConfig:
+    # Large model needs more time to load (15 minutes)
+    initialDelaySeconds: 900
   trustRemoteCode: true

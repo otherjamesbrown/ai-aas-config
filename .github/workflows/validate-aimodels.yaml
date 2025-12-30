@@ -55,15 +55,27 @@ jobs:
 
           echo "All YAML files have valid syntax"
 
-      - name: Validate AIModel CRs
+      - name: Validate AIModel CRs (Business Logic)
         run: |
-          echo "Validating AIModel custom resources..."
+          echo "Validating AIModel custom resources (business logic checks)..."
 
           # Run the validation script
           if [ -f scripts/validate-aimodels.py ]; then
             python scripts/validate-aimodels.py environments/ examples/
           else
             echo "WARNING: scripts/validate-aimodels.py not found, skipping AIModel validation"
+          fi
+
+      - name: Validate AIModel CRs (CRD Schema)
+        run: |
+          echo "Validating AIModel CRs against CRD schema..."
+
+          # Run the CRD schema validation script
+          if [ -f scripts/validate-crd-schema.py ]; then
+            python scripts/validate-crd-schema.py environments/ examples/
+          else
+            echo "ERROR: scripts/validate-crd-schema.py not found"
+            exit 1
           fi
 
       - name: Summary

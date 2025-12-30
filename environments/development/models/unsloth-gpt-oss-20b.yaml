@@ -1,5 +1,9 @@
 # AIModel CR for Unsloth GPT-OSS-20B (Development)
 #
+# RESOURCE NOTE: Memory limit set to 24Gi (not 32Gi) to prevent OOM kills.
+# GPU nodes have 32GB total RAM - we need ~20% headroom for system pods.
+# See: INVESTIGATION_REPORT_ai-aas-vju2.md for details on OOM issue.
+#
 # SECURITY WARNING: This configuration uses trustRemoteCode
 # which allows the model to execute arbitrary Python code from HuggingFace.
 # Only use with trusted model sources.
@@ -17,10 +21,13 @@ metadata:
 spec:
   modelName: unsloth-gpt-oss-20b
   modelID: unsloth/gpt-oss-20b
+  externalName: gpt-oss-20b
   enabled: true
   runtime: vllm
+  modelType: text
   minReplicas: 1
   maxReplicas: 1
+  deploymentMode: RawDeployment
   resources:
     requests:
       cpu: "4"
@@ -28,7 +35,7 @@ spec:
       nvidia.com/gpu: "1"
     limits:
       cpu: "8"
-      memory: "32Gi"
+      memory: "24Gi"
       nvidia.com/gpu: "1"
   tolerations:
     - key: nvidia.com/gpu
