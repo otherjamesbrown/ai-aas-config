@@ -30,12 +30,12 @@ spec:
     deploymentMode: RawDeployment
   resources:
     requests:
-      cpu: "16"
+      cpu: "12"
       memory: "128Gi"
       nvidia.com/gpu: "1"
     limits:
-      cpu: "32"
-      memory: "188Gi"
+      cpu: "16"
+      memory: "180Gi"
       nvidia.com/gpu: "1"
   tolerations:
     - key: nvidia.com/gpu
