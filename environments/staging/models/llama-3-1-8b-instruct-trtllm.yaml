@@ -47,6 +47,10 @@ spec:
     - key: nvidia.com/gpu
       operator: Exists
       effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
   probeConfig:
     livenessPath: /v2/health/live
     readinessPath: /v2/health/ready
