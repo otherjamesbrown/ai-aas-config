@@ -1,0 +1,51 @@
+# AIModel CR for Qwen2-VL-7B-Instruct (Development)
+#
+# Vision-Language Model (VLM) running on TGI runtime.
+# Supports image + text understanding via OpenAI-compatible API.
+#
+# SECURITY WARNING: This configuration uses trustRemoteCode
+# which allows the model to execute arbitrary Python code from HuggingFace.
+# Only use with trusted model sources.
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: AIModel
+metadata:
+  name: qwen2-vl-7b-instruct
+  namespace: staging
+  labels:
+    app: tgi-inference
+    model: qwen2-vl-7b-instruct
+    runtime: tgi
+    environment: staging
+spec:
+  modelName: qwen2-vl-7b-instruct
+  modelID: Qwen/Qwen2-VL-7B-Instruct
+  externalName: qwen2-vl-7b-instruct
+  enabled: true
+  runtime: tgi
+  modelType: vision-language
+  minReplicas: 1
+  maxReplicas: 1
+  deployment:
+    deploymentMode: RawDeployment
+  resources:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+      nvidia.com/gpu: "1"
+    limits:
+      cpu: "8"
+      memory: "24Gi"
+      nvidia.com/gpu: "1"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  runtimeArgs:
+    - --max-input-tokens=4096
+    - --max-total-tokens=8192
+  runtimeEnv:
+    - name: PREFIX_CACHING
+      value: "0"
+    - name: ATTENTION
+      value: "paged"
+  trustRemoteCode: true
