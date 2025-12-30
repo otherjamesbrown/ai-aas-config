@@ -29,8 +29,7 @@ spec:
   modelType: text
   minReplicas: 1
   maxReplicas: 1
-  deployment:
-    deploymentMode: RawDeployment
+  deploymentMode: RawDeployment
   recipeRef:
     name: llama-3-1-8b-instruct-trtllm
     namespace: ai-model-system
@@ -47,7 +46,3 @@ spec:
     - key: nvidia.com/gpu
       operator: Exists
       effect: NoSchedule
-  probeConfig:
-    livenessPath: /v2/health/live
-    readinessPath: /v2/health/ready
-    startupProbeSeconds: 600
