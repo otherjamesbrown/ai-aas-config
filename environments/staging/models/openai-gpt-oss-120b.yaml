@@ -21,7 +21,7 @@ metadata:
 spec:
   modelName: openai-gpt-oss-120b
   modelID: openai/gpt-oss-120b
-  enabled: true
+  enabled: false  # Temporarily disabled for llama benchmark on Blackwell GPU
   runtime: vllm
   modelType: text
   minReplicas: 1
