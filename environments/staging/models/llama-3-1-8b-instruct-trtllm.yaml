@@ -24,7 +24,7 @@ spec:
   externalName: llama-3.1-8b-instruct
   s3Bucket: ai-aas
   s3Key: models/llama-3.1-8b-instruct-trtllm
-  enabled: true
+  enabled: false  # Temporarily disabled for vLLM benchmark comparison
   runtime: tensorrt-llm
   modelType: text
   minReplicas: 1
