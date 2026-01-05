@@ -43,6 +43,10 @@ spec:
     - --dtype=auto
     - --max-model-len=4096
     - --gpu-memory-utilization=0.9
+    # WORKAROUND: Override operator's default --served-model-name (which uses modelID)
+    # This ensures vLLM serves the model under the same name as externalName
+    # so routing policies can correctly match requests
+    - --served-model-name=llama-3.1-8b-instruct-vllm
   trustRemoteCode: true
   hfTokenSecretRef:
     name: hf-credentials
