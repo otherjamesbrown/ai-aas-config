@@ -4,6 +4,7 @@
 # (llama-3-1-8b-instruct-trtllm) for benchmarking comparison.
 #
 # vLLM loads models directly from HuggingFace - no pre-compilation needed.
+# Uses hfTokenSecretRef for gated model authentication.
 #
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: AIModel
@@ -43,3 +44,6 @@ spec:
     - --max-model-len=4096
     - --gpu-memory-utilization=0.9
   trustRemoteCode: true
+  hfTokenSecretRef:
+    name: hf-credentials
+    key: token
