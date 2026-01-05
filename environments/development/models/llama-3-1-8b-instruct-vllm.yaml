@@ -1,0 +1,44 @@
+# AIModel CR for Llama 3.1 8B Instruct (vLLM) - Development
+#
+# This is a vLLM deployment of the same model that runs on TensorRT-LLM
+# (llama-3-1-8b-instruct-trtllm) for benchmarking comparison.
+#
+# vLLM loads models directly from HuggingFace - no pre-compilation needed.
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: AIModel
+metadata:
+  name: llama-3-1-8b-instruct-vllm
+  namespace: development
+  labels:
+    app: vllm-inference
+    model: llama-3.1-8b-instruct
+    runtime: vllm
+    environment: development
+spec:
+  modelName: llama-3-1-8b-instruct-vllm
+  modelID: meta-llama/Llama-3.1-8B-Instruct
+  externalName: llama-3.1-8b-instruct-vllm
+  enabled: true
+  runtime: vllm
+  modelType: text
+  minReplicas: 1
+  maxReplicas: 1
+  deploymentMode: RawDeployment
+  resources:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+      nvidia.com/gpu: "1"
+    limits:
+      cpu: "8"
+      memory: "24Gi"
+      nvidia.com/gpu: "1"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  runtimeArgs:
+    - --dtype=auto
+    - --max-model-len=4096
+    - --gpu-memory-utilization=0.9
