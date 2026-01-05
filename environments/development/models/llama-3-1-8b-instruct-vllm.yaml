@@ -19,7 +19,7 @@ metadata:
 spec:
   modelName: llama-3-1-8b-instruct-vllm
   modelID: meta-llama/Llama-3.1-8B-Instruct
-  externalName: llama-3.1-8b-instruct-vllm
+  externalName: llama-3-1-8b-instruct-vllm
   enabled: true
   runtime: vllm
   modelType: text
@@ -46,7 +46,7 @@ spec:
     # WORKAROUND: Override operator's default --served-model-name (which uses modelID)
     # This ensures vLLM serves the model under the same name as externalName
     # so routing policies can correctly match requests
-    - --served-model-name=llama-3.1-8b-instruct-vllm
+    - --served-model-name=llama-3-1-8b-instruct-vllm
   trustRemoteCode: true
   hfTokenSecretRef:
     name: hf-credentials
