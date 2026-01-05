@@ -1,0 +1,60 @@
+# AIModel CR for Llama 3.1 8B Instruct (vLLM) - Staging (RTX 6000 Blackwell)
+#
+# vLLM deployment on RTX PRO 6000 Blackwell GPU for benchmarking comparison.
+# vLLM loads models directly from HuggingFace - no pre-compilation needed,
+# making it portable across different GPU architectures.
+#
+# Note: TensorRT-LLM engines are GPU-specific and cannot be shared across
+# different architectures (Ada vs Blackwell). Using vLLM for fair comparison.
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: AIModel
+metadata:
+  name: llama-3-1-8b-instruct-vllm-blackwell
+  namespace: staging
+  labels:
+    app: vllm-inference
+    model: llama-3.1-8b-instruct
+    runtime: vllm
+    environment: staging
+    gpu: rtx6000-blackwell
+spec:
+  modelName: llama-3-1-8b-instruct-vllm-blackwell
+  modelID: meta-llama/Llama-3.1-8B-Instruct
+  externalName: llama-3.1-8b-instruct-blackwell
+  enabled: true
+  runtime: vllm
+  modelType: text
+  minReplicas: 1
+  maxReplicas: 1
+  deployment:
+    deploymentMode: RawDeployment
+  resources:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+      nvidia.com/gpu: "1"
+    limits:
+      cpu: "8"
+      memory: "24Gi"
+      nvidia.com/gpu: "1"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+  nodeSelector:
+    # Target RTX PRO 6000 Blackwell nodes specifically
+    node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
+  runtimeArgs:
+    - --dtype=auto
+    - --max-model-len=4096
+    - --gpu-memory-utilization=0.9
+    - --served-model-name=llama-3.1-8b-instruct-blackwell
+  trustRemoteCode: true
+  hfTokenSecretRef:
+    name: hf-credentials
+    key: token
