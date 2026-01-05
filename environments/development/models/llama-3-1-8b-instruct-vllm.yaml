@@ -42,3 +42,4 @@ spec:
     - --dtype=auto
     - --max-model-len=4096
     - --gpu-memory-utilization=0.9
+  trustRemoteCode: true
