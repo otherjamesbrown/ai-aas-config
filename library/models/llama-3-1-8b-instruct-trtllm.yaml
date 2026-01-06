@@ -3,23 +3,25 @@
 # Base configuration for Llama 3.1 8B with TensorRT-LLM runtime.
 # Environment-specific configs should reference this and override as needed.
 #
+# SERVING APPROACHES:
+#   Ada uses Triton Inference Server with TRT-LLM backend (ensemble structure)
+#   Blackwell uses trtllm-serve (standalone OpenAI-compatible server)
+#
 # AVAILABLE ENGINES:
 #   Ada (RTX 4000 Ada, sm_89):
 #     - s3Key: models/ada/llama-3.1-8b-instruct/trtllm-v1-fp8
-#     - Runtime: tensorrt-llm (container 24.10, TRT-LLM 0.14.0)
+#     - Serving: Triton + TRT-LLM backend
 #     - Quantization: FP8
 #     - Engine size: 8.53 GB
 #
 #   Blackwell (RTX PRO 6000, sm_120):
-#     - s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v1 (TRT-LLM 0.20.0)
-#     - s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v2-021 (TRT-LLM 0.21.0)
-#     - Runtime: tensorrt-llm-blackwell (container 25.06/25.08)
+#     - s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v2-021
+#     - Serving: trtllm-serve (standalone)
 #     - Quantization: BF16
 #     - Engine size: 15 GB
 #
 # KNOWN ISSUES:
-#   - Blackwell: /v1/chat/completions broken in trtllm-serve (GitHub #5648)
-#   - Use /v1/completions endpoint instead
+#   - Blackwell trtllm-serve: /v1/chat/completions broken (GitHub #5648)
 #
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: ModelLibraryEntry
@@ -59,6 +61,46 @@ spec:
       container: nvcr.io/nvidia/tritonserver:24.10-trtllm-python-py3
       trtllmVersion: "0.14.0"
 
+      # ============================================================
+      # SERVING CONFIGURATION - Triton Inference Server
+      # ============================================================
+      # Ada uses Triton with the TensorRT-LLM backend for production-ready
+      # serving with full API support including /v1/chat/completions.
+      serving:
+        mode: triton
+        description: "Triton Inference Server with TensorRT-LLM backend"
+
+        # Triton command and args
+        command: tritonserver
+        args:
+          - --model-store=/mnt/models
+          - --http-port=8080
+          - --grpc-port=9000
+          - --allow-http=true
+          - --allow-grpc=true
+
+        # API Protocol
+        protocol: v2  # Triton v2 inference protocol
+        endpoints:
+          health: /v2/health/ready
+          inference: /v2/models/{model}/infer
+          # Note: Chat completions via Triton ensemble
+
+        # Model Repository Structure (required for Triton)
+        # S3 must contain this directory structure:
+        modelRepository:
+          structure: ensemble
+          directories:
+            - ensemble/1/          # Orchestrates the pipeline
+            - preprocessing/1/     # Tokenization
+            - tensorrt_llm/1/      # TRT-LLM engine execution
+            - postprocessing/1/    # Detokenization
+          configFiles:
+            - ensemble/config.pbtxt
+            - preprocessing/config.pbtxt
+            - tensorrt_llm/config.pbtxt
+            - postprocessing/config.pbtxt
+
       # Build Configuration - to reproduce this engine
       buildConfig:
         # Build container (must match runtime for engine compatibility)
@@ -83,6 +125,15 @@ spec:
         # 24.10 uses: from tensorrt_llm.hlapi import LLM, BuildConfig, QuantConfig
         buildApi: hlapi
 
+        # Output structure
+        # HLAPI outputs simple structure, must be converted to Triton ensemble
+        outputStructure: simple  # rank0.engine, config.json, tokenizer files
+        postBuildSteps:
+          - "Create Triton model repository structure"
+          - "Copy engine to tensorrt_llm/1/"
+          - "Add config.pbtxt files for each component"
+          - "See runbook for detailed steps"
+
         # Estimated build time
         buildTime: "5-15 minutes"
 
@@ -91,8 +142,6 @@ spec:
 
       # Engine Output Info
       engineSize: "8.53 GB"
-
-      # Runtime Settings
       maxBatchSize: 32
 
       # Deployment targeting
@@ -123,6 +172,43 @@ spec:
       container: nvcr.io/nvidia/tritonserver:25.08-trtllm-python-py3
       trtllmVersion: "0.21.0"
 
+      # ============================================================
+      # SERVING CONFIGURATION - trtllm-serve (Standalone)
+      # ============================================================
+      # Blackwell uses trtllm-serve for simpler deployment.
+      # WARNING: /v1/chat/completions is broken - use /v1/completions only.
+      serving:
+        mode: trtllm-serve
+        description: "Standalone TRT-LLM server with OpenAI-compatible API"
+
+        # trtllm-serve command and args
+        command: trtllm-serve
+        args:
+          - serve
+          - /mnt/models
+          - --host=0.0.0.0
+          - --port=8080
+          - --max_batch_size=64  # Must match engine build config
+
+        # API Protocol
+        protocol: openai  # OpenAI-compatible REST API
+        endpoints:
+          health: /v1/models
+          models: /v1/models
+          completions: /v1/completions      # WORKING
+          chatCompletions: /v1/chat/completions  # BROKEN - do not use
+
+        # Model Repository Structure (simpler for trtllm-serve)
+        # S3 contains just the engine files directly:
+        modelRepository:
+          structure: simple
+          files:
+            - rank0.engine        # TensorRT engine
+            - config.json         # TRT-LLM config
+            - tokenizer.json      # Tokenizer
+            - tokenizer_config.json
+            - special_tokens_map.json
+
       # Build Configuration - to reproduce this engine
       buildConfig:
         # Build container
@@ -145,6 +231,9 @@ spec:
         # 25.08 uses: from tensorrt_llm import LLM, BuildConfig
         buildApi: llmapi
 
+        # Output structure
+        outputStructure: simple  # Direct output, ready for trtllm-serve
+
         # Estimated build time (much faster on Blackwell)
         buildTime: "~30 seconds"
 
@@ -153,13 +242,7 @@ spec:
 
       # Engine Output Info
       engineSize: "15 GB"
-
-      # Runtime Settings
       maxBatchSize: 64
-
-      # trtllm-serve specific settings
-      serveArgs:
-        - "--max_batch_size=64"  # Must match engine build config
 
       # Deployment targeting
       nodeSelector:
@@ -192,8 +275,8 @@ spec:
       value: "true"
       effect: NoSchedule
 
-  # Probe configuration
+  # Probe configuration (varies by serving mode - see variant.serving.endpoints)
   probeConfig:
-    livenessPath: /v2/health/live
-    readinessPath: /v2/health/ready
+    # Ada (Triton): /v2/health/ready
+    # Blackwell (trtllm-serve): /v1/models
     startupProbeSeconds: 600
