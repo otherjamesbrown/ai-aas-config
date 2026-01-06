@@ -24,7 +24,7 @@ spec:
   modelID: meta-llama/Llama-3.1-8B-Instruct
   externalName: llama-3.1-8b-instruct-trtllm-ada
   s3Bucket: ai-aas
-  s3Key: models/llama-3.1-8b-instruct-trtllm
+  s3Key: models/ada/llama-3.1-8b-instruct/trtllm-v1-fp8
   enabled: true
   runtime: tensorrt-llm
   modelType: text
