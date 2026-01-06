@@ -5,7 +5,7 @@
 #
 # PREREQUISITES:
 # - TensorRT-LLM engines compiled on Blackwell (sm_120)
-# - S3 path: s3://ai-aas/models/llama-3.1-8b-instruct-trtllm-blackwell/
+# - S3 path: s3://ai-aas/models/blackwell/llama-3.1-8b-instruct/trtllm-v1/
 # - Container: 25.06+ (required for Blackwell support)
 #
 apiVersion: aimodel.ai-aas.io/v1alpha1
@@ -16,7 +16,7 @@ metadata:
   labels:
     app: triton-inference
     model: llama-3.1-8b-instruct
-    runtime: tensorrt-llm
+    runtime: tensorrt-llm-blackwell
     environment: staging
     gpu: rtx6000-blackwell
 spec:
@@ -24,9 +24,9 @@ spec:
   modelID: meta-llama/Llama-3.1-8B-Instruct
   externalName: llama-3.1-8b-instruct-trtllm-blackwell
   s3Bucket: ai-aas
-  s3Key: models/trtllm-blackwell-llama-3.1-8b-instruct
+  s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v1
   enabled: true
-  runtime: tensorrt-llm
+  runtime: tensorrt-llm-blackwell
   modelType: text
   minReplicas: 1
   maxReplicas: 1
