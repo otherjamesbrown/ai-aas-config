@@ -1,0 +1,117 @@
+# Model Library: GPT-OSS 20B (vLLM)
+#
+# OpenAI's open-source 20B parameter model.
+# Available from multiple providers (OpenAI, Unsloth).
+#
+# SECURITY NOTE: Uses trustRemoteCode - only use with trusted sources.
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: ModelLibraryEntry
+metadata:
+  name: gpt-oss-20b
+  labels:
+    model-family: gpt-oss
+    model-size: 20b
+    task: text-generation
+    runtime: vllm
+spec:
+  # Model Identity (primary provider)
+  modelID: openai/gpt-oss-20b
+  displayName: "GPT-OSS 20B"
+  description: "OpenAI's open-source 20B parameter model"
+  modelType: text
+
+  # Alternative providers for the same model
+  alternativeProviders:
+    - name: unsloth
+      modelId: unsloth/gpt-oss-20b
+      description: "Unsloth-optimized version with faster inference"
+      recommended: true  # Preferred for production use
+
+  # HuggingFace Source Configuration
+  huggingface:
+    modelId: unsloth/gpt-oss-20b  # Default to unsloth version
+    requiresToken: false  # Not a gated model
+    # Required for GPT-OSS model code
+    trustRemoteCode: true
+
+  # Available Variants by GPU Architecture
+  variants:
+    ada:
+      # RTX 4000 Ada Generation (sm_89, 20GB VRAM)
+      gpuArchitecture: sm_89
+      gpuName: "RTX 4000 Ada Generation"
+
+      # Runtime Configuration
+      runtime: vllm
+      container: vllm/vllm-openai:latest
+
+      # vLLM Runtime Configuration
+      vllmConfig:
+        dtype: auto
+        maxModelLen: 4096  # Limited by 20GB VRAM with 20B model
+        gpuMemoryUtilization: 0.90
+
+      # Deployment targeting
+      nodeSelector:
+        nvidia.com/gpu.product: NVIDIA-RTX-4000-Ada-Generation
+      resources:
+        requests:
+          cpu: "4"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "8"
+          memory: "24Gi"  # Reduced from 32Gi to prevent OOM
+          nvidia.com/gpu: "1"
+
+      # Known Issues
+      knownIssues:
+        - issue: "OOM with 32Gi memory limit"
+          description: "GPU nodes have 32GB total RAM, need headroom for system pods"
+          workaround: "Use 24Gi memory limit"
+          tracking: "INVESTIGATION_REPORT_ai-aas-vju2.md"
+
+    blackwell:
+      # RTX PRO 6000 Blackwell Server Edition (sm_120, 96GB VRAM)
+      gpuArchitecture: sm_120
+      gpuName: "RTX PRO 6000 Blackwell Server Edition"
+
+      # Runtime Configuration
+      runtime: vllm
+      container: vllm/vllm-openai:latest
+
+      # vLLM Runtime Configuration
+      vllmConfig:
+        dtype: auto
+        maxModelLen: 16384  # Larger context possible with 96GB
+        gpuMemoryUtilization: 0.90
+
+      # Deployment targeting
+      nodeSelector:
+        node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
+      resources:
+        requests:
+          cpu: "4"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "8"
+          memory: "32Gi"
+          nvidia.com/gpu: "1"
+
+  # Default tolerations for GPU workloads
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
+  # Probe configuration
+  probeConfig:
+    livenessPath: /health
+    readinessPath: /health
+    startupProbeSeconds: 300

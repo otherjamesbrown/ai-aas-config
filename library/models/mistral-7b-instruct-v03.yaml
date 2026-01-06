@@ -1,0 +1,113 @@
+# Model Library: Mistral 7B Instruct v0.3 (vLLM)
+#
+# Mistral AI's instruction-tuned 7B model.
+# Served via vLLM - loads directly from HuggingFace.
+#
+# SECURITY NOTE: Uses trustRemoteCode for tokenizer compatibility.
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: ModelLibraryEntry
+metadata:
+  name: mistral-7b-instruct-v03
+  labels:
+    model-family: mistral
+    model-size: 7b
+    task: text-generation
+    runtime: vllm
+spec:
+  # Model Identity
+  modelID: mistralai/Mistral-7B-Instruct-v0.3
+  displayName: "Mistral 7B Instruct v0.3"
+  description: "Mistral AI's instruction-tuned 7B parameter model"
+  modelType: text
+
+  # HuggingFace Source Configuration
+  huggingface:
+    modelId: mistralai/Mistral-7B-Instruct-v0.3
+    # Mistral models are gated - require acceptance of license
+    requiresToken: true
+    tokenSecretRef: hf-credentials
+    tokenSecretKey: token
+    # Required for Mistral tokenizer
+    trustRemoteCode: true
+
+  # Available Variants by GPU Architecture
+  variants:
+    ada:
+      # RTX 4000 Ada Generation (sm_89, 20GB VRAM)
+      gpuArchitecture: sm_89
+      gpuName: "RTX 4000 Ada Generation"
+
+      # Runtime Configuration
+      runtime: vllm
+      container: vllm/vllm-openai:latest
+
+      # vLLM Runtime Configuration
+      vllmConfig:
+        dtype: auto
+        maxModelLen: 8192  # Mistral supports 8K context
+        gpuMemoryUtilization: 0.90
+
+      # Deployment targeting
+      nodeSelector:
+        nvidia.com/gpu.product: NVIDIA-RTX-4000-Ada-Generation
+      resources:
+        requests:
+          cpu: "4"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "8"
+          memory: "24Gi"  # Reduced from 32Gi to prevent OOM
+          nvidia.com/gpu: "1"
+
+      # Known Issues
+      knownIssues:
+        - issue: "OOM with 32Gi memory limit"
+          description: "GPU nodes have 32GB total RAM, need headroom for system pods"
+          workaround: "Use 24Gi memory limit"
+          tracking: "INVESTIGATION_REPORT_ai-aas-vju2.md"
+
+    blackwell:
+      # RTX PRO 6000 Blackwell Server Edition (sm_120, 96GB VRAM)
+      gpuArchitecture: sm_120
+      gpuName: "RTX PRO 6000 Blackwell Server Edition"
+
+      # Runtime Configuration
+      runtime: vllm
+      container: vllm/vllm-openai:latest
+
+      # vLLM Runtime Configuration (larger context on Blackwell)
+      vllmConfig:
+        dtype: auto
+        maxModelLen: 32768  # Can handle full Mistral context
+        gpuMemoryUtilization: 0.90
+
+      # Deployment targeting
+      nodeSelector:
+        node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
+      resources:
+        requests:
+          cpu: "4"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "8"
+          memory: "32Gi"
+          nvidia.com/gpu: "1"
+
+  # Default tolerations for GPU workloads
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
+  # Probe configuration
+  probeConfig:
+    livenessPath: /health
+    readinessPath: /health
+    startupProbeSeconds: 300

@@ -1,0 +1,105 @@
+# Model Library: Llama 3.1 8B Instruct (vLLM)
+#
+# vLLM deployment - loads directly from HuggingFace, no pre-compilation needed.
+# Portable across GPU architectures (unlike TensorRT-LLM).
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: ModelLibraryEntry
+metadata:
+  name: llama-3-1-8b-instruct-vllm
+  labels:
+    model-family: llama
+    model-size: 8b
+    task: text-generation
+    runtime: vllm
+spec:
+  # Model Identity
+  modelID: meta-llama/Llama-3.1-8B-Instruct
+  displayName: "Llama 3.1 8B Instruct (vLLM)"
+  description: "Meta's Llama 3.1 8B Instruct served via vLLM - portable across GPUs"
+  modelType: text
+
+  # HuggingFace Source Configuration
+  huggingface:
+    modelId: meta-llama/Llama-3.1-8B-Instruct
+    # Gated model - requires HF_TOKEN with Llama access approval
+    requiresToken: true
+    tokenSecretRef: hf-credentials
+    tokenSecretKey: token
+    trustRemoteCode: true  # vLLM default for flexibility
+
+  # Available Variants by GPU Architecture
+  variants:
+    ada:
+      # RTX 4000 Ada Generation (sm_89, 20GB VRAM)
+      gpuArchitecture: sm_89
+      gpuName: "RTX 4000 Ada Generation"
+
+      # Runtime Configuration
+      runtime: vllm
+      container: vllm/vllm-openai:latest
+
+      # vLLM Runtime Configuration
+      vllmConfig:
+        dtype: auto
+        maxModelLen: 4096  # Limited by 20GB VRAM
+        gpuMemoryUtilization: 0.90
+        servedModelName: llama-3-1-8b-instruct-vllm
+
+      # Deployment targeting
+      nodeSelector:
+        nvidia.com/gpu.product: NVIDIA-RTX-4000-Ada-Generation
+      resources:
+        requests:
+          cpu: "4"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "8"
+          memory: "24Gi"
+          nvidia.com/gpu: "1"
+
+    blackwell:
+      # RTX PRO 6000 Blackwell Server Edition (sm_120, 96GB VRAM)
+      gpuArchitecture: sm_120
+      gpuName: "RTX PRO 6000 Blackwell Server Edition"
+
+      # Runtime Configuration
+      runtime: vllm
+      container: vllm/vllm-openai:latest
+
+      # vLLM Runtime Configuration (larger context on Blackwell)
+      vllmConfig:
+        dtype: auto
+        maxModelLen: 32768  # Much larger context possible with 96GB
+        gpuMemoryUtilization: 0.90
+        servedModelName: llama-3.1-8b-instruct-blackwell
+
+      # Deployment targeting
+      nodeSelector:
+        node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
+      resources:
+        requests:
+          cpu: "4"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "8"
+          memory: "24Gi"
+          nvidia.com/gpu: "1"
+
+  # Default tolerations for GPU workloads
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
+  # Probe configuration
+  probeConfig:
+    livenessPath: /health
+    readinessPath: /health
+    startupProbeSeconds: 300

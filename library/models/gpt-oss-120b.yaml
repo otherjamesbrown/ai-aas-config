@@ -1,0 +1,105 @@
+# Model Library: GPT-OSS 120B (vLLM)
+#
+# OpenAI's largest open-source model (120B parameters).
+# Requires high-memory GPU (96GB+ VRAM) - only runs on Blackwell or H100.
+#
+# REQUIREMENTS:
+# - RTX PRO 6000 Blackwell GPU (96GB VRAM) or equivalent
+# - Special vLLM build with MXFP4 quantization support
+# - 128GB+ system memory
+#
+# SECURITY NOTE: Uses trustRemoteCode - only use with trusted sources.
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: ModelLibraryEntry
+metadata:
+  name: gpt-oss-120b
+  labels:
+    model-family: gpt-oss
+    model-size: 120b
+    task: text-generation
+    runtime: vllm
+spec:
+  # Model Identity
+  modelID: openai/gpt-oss-120b
+  displayName: "GPT-OSS 120B"
+  description: "OpenAI's largest open-source model - 120B parameters"
+  modelType: text
+
+  # HuggingFace Source Configuration
+  huggingface:
+    modelId: openai/gpt-oss-120b
+    requiresToken: false  # Not a gated model
+    # Required for GPT-OSS model code
+    trustRemoteCode: true
+
+  # Hardware Requirements
+  requirements:
+    minGpuMemoryGB: 96
+    minSystemMemoryGB: 128
+    recommendedGpus:
+      - "RTX PRO 6000 Blackwell"
+      - "H100"
+      - "A100 80GB"
+
+  # Available Variants by GPU Architecture
+  # NOTE: Only Blackwell variant available - model too large for Ada (20GB)
+  variants:
+    blackwell:
+      # RTX PRO 6000 Blackwell Server Edition (sm_120, 96GB VRAM)
+      gpuArchitecture: sm_120
+      gpuName: "RTX PRO 6000 Blackwell Server Edition"
+
+      # Runtime Configuration
+      runtime: vllm
+      # Special vLLM build required for MXFP4 quantization
+      container: vllm/vllm-openai:v0.10.1+gptoss
+
+      # vLLM Runtime Configuration
+      vllmConfig:
+        dtype: auto
+        maxModelLen: 32768  # Full context length
+        gpuMemoryUtilization: 0.95  # High utilization for large model
+        # Uses OpenAI's MXFP4 quantization for efficient inference
+
+      # Deployment targeting
+      nodeSelector:
+        node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
+      resources:
+        requests:
+          cpu: "12"
+          memory: "128Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "16"
+          memory: "180Gi"
+          nvidia.com/gpu: "1"
+
+    # hopper:
+    #   # H100 80GB variant (sm_90) - not yet configured
+    #   gpuArchitecture: sm_90
+    #   gpuName: "NVIDIA H100 80GB"
+    #   # TODO: Add H100 configuration when available
+
+  # Default tolerations for GPU workloads
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
+  # Probe configuration
+  probeConfig:
+    livenessPath: /health
+    readinessPath: /health
+    # Large model needs more time to load (15 minutes)
+    startupProbeSeconds: 900
+
+  # Unavailable Variants
+  unavailableVariants:
+    ada:
+      reason: "Insufficient VRAM"
+      details: "GPT-OSS 120B requires 96GB+ VRAM, RTX 4000 Ada has 20GB"
