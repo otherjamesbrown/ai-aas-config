@@ -1,0 +1,104 @@
+# Model Library: Llama 3.1 8B Instruct (TensorRT-LLM)
+#
+# Base configuration for Llama 3.1 8B with TensorRT-LLM runtime.
+# Environment-specific configs should reference this and override as needed.
+#
+# AVAILABLE ENGINES:
+#   Ada (RTX 4000 Ada, sm_89):
+#     - s3Key: models/ada/llama-3.1-8b-instruct/trtllm-v1-fp8
+#     - Runtime: tensorrt-llm (container 24.10, TRT-LLM 0.14.0)
+#     - Quantization: FP8
+#     - Engine size: 8.53 GB
+#
+#   Blackwell (RTX PRO 6000, sm_120):
+#     - s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v1 (TRT-LLM 0.20.0)
+#     - s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v2-021 (TRT-LLM 0.21.0)
+#     - Runtime: tensorrt-llm-blackwell (container 25.06/25.08)
+#     - Quantization: BF16
+#     - Engine size: 15 GB
+#
+# KNOWN ISSUES:
+#   - Blackwell: /v1/chat/completions broken in trtllm-serve (GitHub #5648)
+#   - Use /v1/completions endpoint instead
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: ModelLibraryEntry
+metadata:
+  name: llama-3-1-8b-instruct-trtllm
+  labels:
+    model-family: llama
+    model-size: 8b
+    task: text-generation
+spec:
+  # Model Identity
+  modelID: meta-llama/Llama-3.1-8B-Instruct
+  displayName: "Llama 3.1 8B Instruct (TensorRT-LLM)"
+  description: "Meta's Llama 3.1 8B Instruct optimized with TensorRT-LLM"
+  modelType: text
+
+  # Available Variants by GPU Architecture
+  variants:
+    ada:
+      # RTX 4000 Ada Generation (sm_89)
+      runtime: tensorrt-llm
+      s3Bucket: ai-aas
+      s3Key: models/ada/llama-3.1-8b-instruct/trtllm-v1-fp8
+      container: nvcr.io/nvidia/tritonserver:24.10-trtllm-python-py3
+      trtllmVersion: "0.14.0"
+      quantization: FP8
+      engineSize: "8.53 GB"
+      maxBatchSize: 32
+      nodeSelector:
+        nvidia.com/gpu.product: NVIDIA-RTX-4000-Ada-Generation
+      resources:
+        requests:
+          cpu: "8"
+          memory: "32Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "16"
+          memory: "48Gi"
+          nvidia.com/gpu: "1"
+
+    blackwell:
+      # RTX PRO 6000 Blackwell (sm_120)
+      runtime: tensorrt-llm-blackwell
+      s3Bucket: ai-aas
+      # Available versions:
+      #   trtllm-v1: TRT-LLM 0.20.0 (container 25.06)
+      #   trtllm-v2-021: TRT-LLM 0.21.0 (container 25.08)
+      s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v2-021
+      container: nvcr.io/nvidia/tritonserver:25.08-trtllm-python-py3
+      trtllmVersion: "0.21.0"
+      quantization: BF16
+      engineSize: "15 GB"
+      maxBatchSize: 64
+      nodeSelector:
+        node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
+      resources:
+        requests:
+          cpu: "8"
+          memory: "32Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "16"
+          memory: "48Gi"
+          nvidia.com/gpu: "1"
+      knownIssues:
+        - "/v1/chat/completions broken - use /v1/completions"
+
+  # Default tolerations for GPU workloads
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+
+  # Probe configuration
+  probeConfig:
+    livenessPath: /v2/health/live
+    readinessPath: /v2/health/ready
+    startupProbeSeconds: 600
