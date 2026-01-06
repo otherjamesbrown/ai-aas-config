@@ -24,7 +24,7 @@ spec:
   modelID: meta-llama/Llama-3.1-8B-Instruct
   externalName: llama-3.1-8b-instruct-trtllm-blackwell
   s3Bucket: ai-aas
-  s3Key: models/llama-3.1-8b-instruct-trtllm-blackwell
+  s3Key: models/trtllm-blackwell-llama-3.1-8b-instruct
   enabled: false  # Disabled - engine not uploaded yet, S3 path has raw HF weights
   runtime: tensorrt-llm
   modelType: text
