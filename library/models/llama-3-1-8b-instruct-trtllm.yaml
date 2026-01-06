@@ -36,18 +36,66 @@ spec:
   description: "Meta's Llama 3.1 8B Instruct optimized with TensorRT-LLM"
   modelType: text
 
+  # HuggingFace Source Configuration
+  huggingface:
+    modelId: meta-llama/Llama-3.1-8B-Instruct
+    # Gated model - requires HF_TOKEN with Llama access approval
+    requiresToken: true
+    tokenSecretRef: hf-token  # K8s secret containing HF_TOKEN
+    # Some models need this for custom code (not needed for Llama)
+    trustRemoteCode: false
+
   # Available Variants by GPU Architecture
   variants:
     ada:
       # RTX 4000 Ada Generation (sm_89)
+      gpuArchitecture: sm_89
+      gpuName: "RTX 4000 Ada Generation"
+
+      # Runtime Configuration
       runtime: tensorrt-llm
       s3Bucket: ai-aas
       s3Key: models/ada/llama-3.1-8b-instruct/trtllm-v1-fp8
       container: nvcr.io/nvidia/tritonserver:24.10-trtllm-python-py3
       trtllmVersion: "0.14.0"
-      quantization: FP8
+
+      # Build Configuration - to reproduce this engine
+      buildConfig:
+        # Build container (must match runtime for engine compatibility)
+        container: nvcr.io/nvidia/tritonserver:24.10-trtllm-python-py3
+        # Container quirks
+        preInstall:
+          - "pip install setuptools"  # Required for modelopt in 24.10
+
+        # TensorRT-LLM Build Parameters
+        trtllm:
+          maxBatchSize: 32
+          maxInputLen: 4096
+          maxSeqLen: 8192
+          maxNumTokens: 4096
+
+        # Quantization Configuration
+        quantization:
+          algorithm: FP8
+          kvCacheAlgo: FP8  # FP8 KV cache for memory efficiency
+
+        # Build API (changed between versions)
+        # 24.10 uses: from tensorrt_llm.hlapi import LLM, BuildConfig, QuantConfig
+        buildApi: hlapi
+
+        # Estimated build time
+        buildTime: "5-15 minutes"
+
+        # Runbook reference
+        runbook: docs/runbooks/rebuild-trtllm-fp8-ada.md
+
+      # Engine Output Info
       engineSize: "8.53 GB"
+
+      # Runtime Settings
       maxBatchSize: 32
+
+      # Deployment targeting
       nodeSelector:
         nvidia.com/gpu.product: NVIDIA-RTX-4000-Ada-Generation
       resources:
@@ -61,7 +109,11 @@ spec:
           nvidia.com/gpu: "1"
 
     blackwell:
-      # RTX PRO 6000 Blackwell (sm_120)
+      # RTX PRO 6000 Blackwell Server Edition (sm_120)
+      gpuArchitecture: sm_120
+      gpuName: "RTX PRO 6000 Blackwell Server Edition"
+
+      # Runtime Configuration
       runtime: tensorrt-llm-blackwell
       s3Bucket: ai-aas
       # Available versions:
@@ -70,9 +122,46 @@ spec:
       s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v2-021
       container: nvcr.io/nvidia/tritonserver:25.08-trtllm-python-py3
       trtllmVersion: "0.21.0"
-      quantization: BF16
+
+      # Build Configuration - to reproduce this engine
+      buildConfig:
+        # Build container
+        container: nvcr.io/nvidia/tritonserver:25.08-trtllm-python-py3
+        # No preInstall needed for 25.08
+
+        # TensorRT-LLM Build Parameters (larger for 96GB VRAM)
+        trtllm:
+          maxBatchSize: 64
+          maxInputLen: 8192
+          maxSeqLen: 10240
+          maxNumTokens: 8192
+
+        # Quantization Configuration
+        quantization:
+          algorithm: BF16  # Default, no explicit quantization
+          # FP8 possible but not tested on Blackwell yet
+
+        # Build API
+        # 25.08 uses: from tensorrt_llm import LLM, BuildConfig
+        buildApi: llmapi
+
+        # Estimated build time (much faster on Blackwell)
+        buildTime: "~30 seconds"
+
+        # Runbook reference
+        runbook: docs/runbooks/rebuild-trtllm-blackwell.md
+
+      # Engine Output Info
       engineSize: "15 GB"
+
+      # Runtime Settings
       maxBatchSize: 64
+
+      # trtllm-serve specific settings
+      serveArgs:
+        - "--max_batch_size=64"  # Must match engine build config
+
+      # Deployment targeting
       nodeSelector:
         node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
       resources:
@@ -84,8 +173,14 @@ spec:
           cpu: "16"
           memory: "48Gi"
           nvidia.com/gpu: "1"
+
+      # Known Issues
       knownIssues:
-        - "/v1/chat/completions broken - use /v1/completions"
+        - issue: "/v1/chat/completions broken"
+          description: "trtllm-serve has async bug in chat completions handler"
+          workaround: "Use /v1/completions endpoint instead"
+          tracking: "https://github.com/NVIDIA/TensorRT-LLM/issues/5648"
+          affectedVersions: ["0.20.0", "0.21.0"]
 
   # Default tolerations for GPU workloads
   tolerations:

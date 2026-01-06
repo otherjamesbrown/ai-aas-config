@@ -1,0 +1,116 @@
+# Model Library: Qwen2-VL 7B Instruct (vLLM)
+#
+# Vision-Language model from Alibaba's Qwen team.
+# Requires trust_remote_code=True for custom model code.
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: ModelLibraryEntry
+metadata:
+  name: qwen2-vl-7b-instruct
+  labels:
+    model-family: qwen
+    model-size: 7b
+    task: vision-language
+spec:
+  # Model Identity
+  modelID: Qwen/Qwen2-VL-7B-Instruct
+  displayName: "Qwen2-VL 7B Instruct"
+  description: "Alibaba's Qwen2 Vision-Language model for multimodal tasks"
+  modelType: vision-language
+
+  # HuggingFace Source Configuration
+  huggingface:
+    modelId: Qwen/Qwen2-VL-7B-Instruct
+    # Not a gated model - no token required
+    requiresToken: false
+    # CRITICAL: Model uses custom code - must trust remote code
+    trustRemoteCode: true
+    # Revision/commit to use (optional, for reproducibility)
+    # revision: "main"
+
+  # Available Variants by GPU Architecture
+  variants:
+    ada:
+      # RTX 4000 Ada Generation (sm_89, 20GB VRAM)
+      gpuArchitecture: sm_89
+      gpuName: "RTX 4000 Ada Generation"
+
+      # Runtime Configuration (vLLM - no pre-build needed)
+      runtime: vllm
+      container: vllm/vllm-openai:v0.6.6.post1
+
+      # vLLM Runtime Configuration
+      vllmConfig:
+        # Model loading
+        model: Qwen/Qwen2-VL-7B-Instruct
+        trustRemoteCode: true  # Required for Qwen2-VL
+
+        # Memory optimization for 20GB VRAM
+        maxModelLen: 4096
+        gpuMemoryUtilization: 0.90
+
+        # Tensor parallelism (1 GPU)
+        tensorParallelSize: 1
+
+        # Quantization (optional - helps fit in VRAM)
+        # quantization: awq  # Use AWQ quantized version if available
+
+      # No buildConfig needed - vLLM loads directly from HuggingFace
+
+      # Deployment targeting
+      nodeSelector:
+        nvidia.com/gpu.product: NVIDIA-RTX-4000-Ada-Generation
+      resources:
+        requests:
+          cpu: "4"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "8"
+          memory: "32Gi"
+          nvidia.com/gpu: "1"
+
+    blackwell:
+      # RTX PRO 6000 Blackwell Server Edition (sm_120, 96GB VRAM)
+      gpuArchitecture: sm_120
+      gpuName: "RTX PRO 6000 Blackwell Server Edition"
+
+      # Runtime Configuration
+      runtime: vllm
+      container: vllm/vllm-openai:v0.6.6.post1
+
+      # vLLM Runtime Configuration (larger context for 96GB VRAM)
+      vllmConfig:
+        model: Qwen/Qwen2-VL-7B-Instruct
+        trustRemoteCode: true
+
+        # Can handle much larger context on Blackwell
+        maxModelLen: 32768
+        gpuMemoryUtilization: 0.85
+
+        tensorParallelSize: 1
+
+      # Deployment targeting
+      nodeSelector:
+        node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
+      resources:
+        requests:
+          cpu: "4"
+          memory: "16Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "8"
+          memory: "32Gi"
+          nvidia.com/gpu: "1"
+
+  # Default tolerations for GPU workloads
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+
+  # Probe configuration
+  probeConfig:
+    livenessPath: /health
+    readinessPath: /health
+    startupProbeSeconds: 300
