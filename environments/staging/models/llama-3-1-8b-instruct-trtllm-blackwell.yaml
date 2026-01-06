@@ -1,0 +1,61 @@
+# AIModel CR for Llama 3.1 8B Instruct (TensorRT-LLM) - Staging (RTX 6000 Blackwell)
+#
+# Uses TensorRT-LLM runtime via Triton Inference Server on Blackwell GPUs.
+# TensorRT engines are GPU-architecture specific - this uses sm_120 engines.
+#
+# PREREQUISITES:
+# - TensorRT-LLM engines compiled on Blackwell (sm_120)
+# - S3 path: s3://ai-aas/models/llama-3.1-8b-instruct-trtllm-blackwell/
+# - Container: 25.06+ (required for Blackwell support)
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: AIModel
+metadata:
+  name: llama-3-1-8b-instruct-trtllm-blackwell
+  namespace: staging
+  labels:
+    app: triton-inference
+    model: llama-3.1-8b-instruct
+    runtime: tensorrt-llm
+    environment: staging
+    gpu: rtx6000-blackwell
+spec:
+  modelName: llama-3-1-8b-instruct-trtllm-blackwell
+  modelID: meta-llama/Llama-3.1-8B-Instruct
+  externalName: llama-3.1-8b-instruct-trtllm-blackwell
+  s3Bucket: ai-aas
+  s3Key: models/llama-3.1-8b-instruct-trtllm-blackwell
+  enabled: true
+  runtime: tensorrt-llm
+  modelType: text
+  minReplicas: 1
+  maxReplicas: 1
+  deployment:
+    deploymentMode: RawDeployment
+  recipeRef:
+    name: llama-3-1-8b-instruct-trtllm-blackwell
+    namespace: ai-model-system
+  resources:
+    requests:
+      cpu: "8"
+      memory: "32Gi"
+      nvidia.com/gpu: "1"
+    limits:
+      cpu: "16"
+      memory: "48Gi"
+      nvidia.com/gpu: "1"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+  nodeSelector:
+    # Target RTX PRO 6000 Blackwell nodes specifically
+    node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
+  probeConfig:
+    livenessPath: /v2/health/live
+    readinessPath: /v2/health/ready
+    startupProbeSeconds: 600
