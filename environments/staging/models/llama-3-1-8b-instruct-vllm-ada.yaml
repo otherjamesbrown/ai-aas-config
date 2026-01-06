@@ -1,0 +1,57 @@
+# AIModel CR for Llama 3.1 8B Instruct (vLLM) - Staging (RTX 4000 Ada)
+#
+# vLLM deployment on RTX 4000 Ada GPU for benchmarking comparison.
+# This provides a fair comparison with the Blackwell deployment using
+# the same inference runtime.
+#
+apiVersion: aimodel.ai-aas.io/v1alpha1
+kind: AIModel
+metadata:
+  name: llama-3-1-8b-instruct-vllm-ada
+  namespace: staging
+  labels:
+    app: vllm-inference
+    model: llama-3.1-8b-instruct
+    runtime: vllm
+    environment: staging
+    gpu: rtx4000-ada
+spec:
+  modelName: llama-3-1-8b-instruct-vllm-ada
+  modelID: meta-llama/Llama-3.1-8B-Instruct
+  externalName: llama-3.1-8b-instruct-ada
+  enabled: true
+  runtime: vllm
+  modelType: text
+  minReplicas: 1
+  maxReplicas: 1
+  deployment:
+    deploymentMode: RawDeployment
+  resources:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+      nvidia.com/gpu: "1"
+    limits:
+      cpu: "8"
+      memory: "24Gi"
+      nvidia.com/gpu: "1"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+  nodeSelector:
+    # Target RTX 4000 Ada nodes specifically
+    node.kubernetes.io/instance-type: g2-gpu-rtx4000a1-l
+  runtimeArgs:
+    - --dtype=auto
+    - --max-model-len=4096
+    - --gpu-memory-utilization=0.9
+    - --served-model-name=llama-3.1-8b-instruct-ada
+  trustRemoteCode: true
+  hfTokenSecretRef:
+    name: hf-credentials
+    key: token

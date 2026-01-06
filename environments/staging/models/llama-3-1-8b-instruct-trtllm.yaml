@@ -5,31 +5,32 @@
 #
 # PREREQUISITES:
 # - TensorRT-LLM engines must be pre-compiled and uploaded to S3
-# - S3 path: s3://ai-aas/models/ada/llama-3.1-8b-instruct/trtllm-v1-fp16/
+# - S3 path: s3://ai-aas-models/triton/llama-3.1-8b-instruct-trtllm/
 # - ClusterServingRuntime kserve-tensorrt-llm must be deployed
 #
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: AIModel
 metadata:
   name: llama-3-1-8b-instruct-trtllm
-  namespace: development
+  namespace: staging
   labels:
     app: triton-inference
     model: llama-3.1-8b-instruct
     runtime: tensorrt-llm
-    environment: development
+    environment: staging
 spec:
   modelName: llama-3-1-8b-instruct-trtllm
   modelID: meta-llama/Llama-3.1-8B-Instruct
   externalName: llama-3.1-8b-instruct
   s3Bucket: ai-aas
-  s3Key: models/ada/llama-3.1-8b-instruct/trtllm-v1-fp16
-  enabled: true
+  s3Key: models/llama-3.1-8b-instruct-trtllm
+  enabled: false  # Temporarily disabled for vLLM benchmark comparison
   runtime: tensorrt-llm
   modelType: text
   minReplicas: 1
   maxReplicas: 1
-  deploymentMode: RawDeployment
+  deployment:
+    deploymentMode: RawDeployment
   recipeRef:
     name: llama-3-1-8b-instruct-trtllm
     namespace: ai-model-system
@@ -46,3 +47,11 @@ spec:
     - key: nvidia.com/gpu
       operator: Exists
       effect: NoSchedule
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
+  probeConfig:
+    livenessPath: /v2/health/live
+    readinessPath: /v2/health/ready
+    startupProbeSeconds: 600
