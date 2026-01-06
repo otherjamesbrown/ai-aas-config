@@ -5,8 +5,15 @@
 #
 # PREREQUISITES:
 # - TensorRT-LLM engines must be pre-compiled and uploaded to S3
-# - S3 path: s3://ai-aas/models/ada/llama-3.1-8b-instruct/trtllm-v1-fp16/
+# - S3 path: s3://ai-aas/models/ada/llama-3.1-8b-instruct/trtllm-v1-fp8/
 # - ClusterServingRuntime kserve-tensorrt-llm must be deployed
+#
+# ENGINE BUILD INFO (2026-01-06):
+# - TRT-LLM 0.14.0 (tritonserver:24.10-trtllm-python-py3)
+# - FP8 quantization (weights + KV cache)
+# - Max batch size: 32
+# - Engine size: 8.53 GB (vs 15 GB FP16)
+# - Expected performance: ~130+ tok/s (vs ~72 tok/s FP16)
 #
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: AIModel
@@ -23,7 +30,7 @@ spec:
   modelID: meta-llama/Llama-3.1-8B-Instruct
   externalName: llama-3.1-8b-instruct
   s3Bucket: ai-aas
-  s3Key: models/ada/llama-3.1-8b-instruct/trtllm-v1-fp16
+  s3Key: models/ada/llama-3.1-8b-instruct/trtllm-v1-fp8
   enabled: true
   runtime: tensorrt-llm
   modelType: text
