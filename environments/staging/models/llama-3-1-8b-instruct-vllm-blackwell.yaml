@@ -22,7 +22,7 @@ spec:
   modelName: llama-3-1-8b-instruct-vllm-blackwell
   modelID: meta-llama/Llama-3.1-8B-Instruct
   externalName: llama-3.1-8b-instruct-blackwell
-  enabled: true
+  enabled: false
   runtime: vllm
   modelType: text
   minReplicas: 1
