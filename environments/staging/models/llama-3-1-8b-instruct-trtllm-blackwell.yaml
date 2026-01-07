@@ -26,7 +26,7 @@ spec:
   s3Bucket: ai-aas
   s3Key: models/blackwell/llama-3.1-8b-instruct/trtllm-v1
   enabled: true
-  runtime: tensorrt-llm-blackwell
+  runtime: tensorrt-llm
   modelType: text
   minReplicas: 1
   maxReplicas: 1
