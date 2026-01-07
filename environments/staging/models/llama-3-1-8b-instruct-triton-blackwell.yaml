@@ -32,6 +32,7 @@ spec:
   s3Key: models/blackwell/llama-3.1-8b-instruct/triton-v1
   enabled: true
   runtime: triton
+  runtimeName: kserve-triton-blackwell
   modelType: text
   minReplicas: 1
   maxReplicas: 1
