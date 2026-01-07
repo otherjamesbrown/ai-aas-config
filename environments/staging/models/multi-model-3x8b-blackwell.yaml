@@ -51,16 +51,19 @@ spec:
   multiModel:
     enabled: true
     models:
-      - name: llama-3.1-8b-instruct
+      - name: llama-3-1-8b-instruct
         modelID: meta-llama/Llama-3.1-8B-Instruct
+        s3Key: models/blackwell/multi-model-3x8b/llama-3.1-8b-instruct
         kvCacheFraction: "0.28"
         maxBatchSize: 32
       - name: mistral-7b-instruct
         modelID: mistralai/Mistral-7B-Instruct-v0.3
+        s3Key: models/blackwell/multi-model-3x8b/mistral-7b-instruct
         kvCacheFraction: "0.28"
         maxBatchSize: 32
       - name: qwen2-7b-instruct
         modelID: Qwen/Qwen2-7B-Instruct
+        s3Key: models/blackwell/multi-model-3x8b/qwen2-7b-instruct
         kvCacheFraction: "0.28"
         maxBatchSize: 32
 
