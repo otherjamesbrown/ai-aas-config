@@ -69,11 +69,11 @@ spec:
 
   resources:
     requests:
-      cpu: "16"
+      cpu: "8"
       memory: "64Gi"
       nvidia.com/gpu: "1"
     limits:
-      cpu: "32"
+      cpu: "16"
       memory: "96Gi"
       nvidia.com/gpu: "1"
 
