@@ -1,128 +1,87 @@
-# Multi-Model Deployment: 3x 7-8B models on Blackwell RTX PRO 6000
-# Triton TensorRT-LLM with full ensemble structure
-# Each model has its own AIModel CR and InferenceService
+# AIModel CR for Multi-Model 3x8B on Blackwell (Staging)
 #
-# Models:
-# 1. Llama 3.1 8B Instruct (meta-llama/Llama-3.1-8B-Instruct)
-# 2. Mistral 7B Instruct v0.3 (mistralai/Mistral-7B-Instruct-v0.3)
-# 3. Qwen2 7B Instruct (Qwen/Qwen2-7B-Instruct)
+# PLACEHOLDER for future true multi-model deployment using Triton's
+# model-control-mode=explicit to serve multiple models from one InferenceService.
 #
-# Total VRAM Usage:
-# - Llama 3.1 8B: ~15 GB engine + ~23 GB KV cache = 38 GB
-# - Mistral 7B: ~14 GB engine + ~23 GB KV cache = 37 GB
-# - Qwen2 7B: ~14 GB engine + ~24 GB KV cache = 38 GB
-# - Total: ~43 GB engines + ~70 GB KV cache = 113 GB (exceeds 96 GB!)
+# Currently DISABLED - individual models deployed as separate AIModels:
+# - llama-3-1-8b-instruct-triton-blackwell (enabled)
+# - mistral-7b-instruct-triton-blackwell (disabled)
+# - qwen2-7b-instruct-triton-blackwell (disabled)
 #
-# NOTE: Currently disabled. Need to adjust KV cache fractions or deploy models separately.
-# Each model: KV cache fraction 0.28, max batch size 32
+# Only one model can use the Blackwell GPU at a time with the current setup.
+# True multi-model serving requires operator support for multiModel field.
 #
----
-# Llama 3.1 8B Instruct
+# Engine builds completed 2026-01-07 with full Triton ensemble structure at:
+# - s3://ai-aas/models/blackwell/multi-model-3x8b/llama-3.1-8b-instruct/
+# - s3://ai-aas/models/blackwell/multi-model-3x8b/mistral-7b-instruct/
+# - s3://ai-aas/models/blackwell/multi-model-3x8b/qwen2-7b-instruct/
+#
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: AIModel
 metadata:
-  name: llama-3-1-8b-instruct-triton-blackwell
+  name: multi-model-3x8b-blackwell
   namespace: staging
   labels:
     app: triton-inference
+    model: multi-model-3x8b
     runtime: triton-blackwell
-    multi-model: "3x8b"
+    environment: staging
+    gpu: rtx6000-blackwell
 spec:
-  modelName: llama-3-1-8b-instruct-triton-blackwell
-  modelID: meta-llama/Llama-3.1-8B-Instruct
+  modelName: multi-model-3x8b-blackwell
+  modelID: multi-model/3x8b
+  externalName: multi-model-3x8b-blackwell
+  displayName: "Multi-Model 3x8B (Blackwell)"
+  description: "3 x 7-8B LLM models on single RTX 6000 Blackwell GPU"
   s3Bucket: ai-aas
-  s3Key: models/blackwell/multi-model-3x8b/llama-3.1-8b-instruct
-  enabled: true
+  s3Key: models/blackwell/multi-model-3x8b
+  enabled: false
   runtime: triton
   runtimeName: kserve-triton-blackwell
+  modelType: text
   minReplicas: 1
   maxReplicas: 1
+  deployment:
+    deploymentMode: RawDeployment
+  # Multi-model configuration (requires operator support)
+  multiModel:
+    enabled: false
+    models:
+      - name: llama-3-1-8b-instruct
+        modelID: meta-llama/Llama-3.1-8B-Instruct
+        s3Key: models/blackwell/multi-model-3x8b/llama-3.1-8b-instruct
+        kvCacheFraction: "0.28"
+        maxBatchSize: 32
+      - name: mistral-7b-instruct
+        modelID: mistralai/Mistral-7B-Instruct-v0.3
+        s3Key: models/blackwell/multi-model-3x8b/mistral-7b-instruct
+        kvCacheFraction: "0.28"
+        maxBatchSize: 32
+      - name: qwen2-7b-instruct
+        modelID: Qwen/Qwen2-7B-Instruct
+        s3Key: models/blackwell/multi-model-3x8b/qwen2-7b-instruct
+        kvCacheFraction: "0.28"
+        maxBatchSize: 32
   resources:
     requests:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "8"
+      memory: "64Gi"
       nvidia.com/gpu: "1"
     limits:
-      cpu: "8"
-      memory: "32Gi"
+      cpu: "16"
+      memory: "96Gi"
       nvidia.com/gpu: "1"
-  nodeSelector:
-    node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
   tolerations:
     - key: nvidia.com/gpu
       operator: Exists
       effect: NoSchedule
-
----
-# Mistral 7B Instruct v0.3
-apiVersion: aimodel.ai-aas.io/v1alpha1
-kind: AIModel
-metadata:
-  name: mistral-7b-instruct-triton-blackwell
-  namespace: staging
-  labels:
-    app: triton-inference
-    runtime: triton-blackwell
-    multi-model: "3x8b"
-spec:
-  modelName: mistral-7b-instruct-triton-blackwell
-  modelID: mistralai/Mistral-7B-Instruct-v0.3
-  s3Bucket: ai-aas
-  s3Key: models/blackwell/multi-model-3x8b/mistral-7b-instruct
-  enabled: true
-  runtime: triton
-  runtimeName: kserve-triton-blackwell
-  minReplicas: 1
-  maxReplicas: 1
-  resources:
-    requests:
-      cpu: "4"
-      memory: "16Gi"
-      nvidia.com/gpu: "1"
-    limits:
-      cpu: "8"
-      memory: "32Gi"
-      nvidia.com/gpu: "1"
+    - key: gpu-workload
+      operator: Equal
+      value: "true"
+      effect: NoSchedule
   nodeSelector:
     node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
-  tolerations:
-    - key: nvidia.com/gpu
-      operator: Exists
-      effect: NoSchedule
-
----
-# Qwen2 7B Instruct
-apiVersion: aimodel.ai-aas.io/v1alpha1
-kind: AIModel
-metadata:
-  name: qwen2-7b-instruct-triton-blackwell
-  namespace: staging
-  labels:
-    app: triton-inference
-    runtime: triton-blackwell
-    multi-model: "3x8b"
-spec:
-  modelName: qwen2-7b-instruct-triton-blackwell
-  modelID: Qwen/Qwen2-7B-Instruct
-  s3Bucket: ai-aas
-  s3Key: models/blackwell/multi-model-3x8b/qwen2-7b-instruct
-  enabled: true
-  runtime: triton
-  runtimeName: kserve-triton-blackwell
-  minReplicas: 1
-  maxReplicas: 1
-  resources:
-    requests:
-      cpu: "4"
-      memory: "16Gi"
-      nvidia.com/gpu: "1"
-    limits:
-      cpu: "8"
-      memory: "32Gi"
-      nvidia.com/gpu: "1"
-  nodeSelector:
-    node.kubernetes.io/instance-type: g3-gpu-rtxpro6000-blackwell-1
-  tolerations:
-    - key: nvidia.com/gpu
-      operator: Exists
-      effect: NoSchedule
+  probeConfig:
+    livenessPath: /v2/health/live
+    readinessPath: /v2/health/ready
+    startupProbeSeconds: 900
