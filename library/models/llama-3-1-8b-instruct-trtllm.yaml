@@ -145,8 +145,9 @@ spec:
       maxBatchSize: 32
 
       # Deployment targeting
+      # Note: Use instance-type selector for cloud providers (Linode uses this pattern)
       nodeSelector:
-        nvidia.com/gpu.product: NVIDIA-RTX-4000-Ada-Generation
+        node.kubernetes.io/instance-type: g2-gpu-rtx4000a1-l
       resources:
         requests:
           cpu: "8"
@@ -280,3 +281,38 @@ spec:
     # Ada (Triton): /v2/health/ready
     # Blackwell (trtllm-serve): /v1/models
     startupProbeSeconds: 600
+
+  # ============================================================
+  # API ROUTER CONFIGURATION
+  # ============================================================
+  # When deploying this model, configure the api-router as follows:
+  #
+  # 1. Add backend endpoint to api-router Helm values:
+  #    backends:
+  #      endpoints: "...,{model-name}:http://{model-name}-predictor.{namespace}.svc.cluster.local:80"
+  #
+  # 2. Create routing policy via CLI:
+  #
+  #    For Ada (Triton backend - requires tokenizer):
+  #      ai-aas-cli routing policy create --global \
+  #        --model llama-3-1-8b-instruct-trtllm-ada \
+  #        --backends llama-3-1-8b-instruct-trtllm-ada:100 \
+  #        --backend-type triton \
+  #        --tokenizer llama3
+  #
+  #    For Blackwell (trtllm-serve - OpenAI compatible):
+  #      ai-aas-cli routing policy create --global \
+  #        --model llama-3-1-8b-instruct-trtllm-blackwell \
+  #        --backends llama-3-1-8b-instruct-trtllm-blackwell:100
+  #
+  # Backend types:
+  #   - Ada uses "triton" (Triton v2 protocol, requires tokenizer for counting)
+  #   - Blackwell uses "openai" (default, OpenAI-compatible API)
+  apiRouter:
+    ada:
+      backendType: triton
+      tokenizer: llama3
+      healthPath: /v2/health/ready
+    blackwell:
+      backendType: openai
+      healthPath: /v1/models

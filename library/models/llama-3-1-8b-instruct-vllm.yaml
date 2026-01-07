@@ -47,8 +47,9 @@ spec:
         servedModelName: llama-3-1-8b-instruct-vllm
 
       # Deployment targeting
+      # Note: Use instance-type selector for cloud providers (Linode uses this pattern)
       nodeSelector:
-        nvidia.com/gpu.product: NVIDIA-RTX-4000-Ada-Generation
+        node.kubernetes.io/instance-type: g2-gpu-rtx4000a1-l
       resources:
         requests:
           cpu: "4"
@@ -103,3 +104,26 @@ spec:
     livenessPath: /health
     readinessPath: /health
     startupProbeSeconds: 300
+
+  # ============================================================
+  # API ROUTER CONFIGURATION
+  # ============================================================
+  # vLLM uses OpenAI-compatible API, so no special backend_type needed.
+  #
+  # 1. Add backend endpoint to api-router Helm values:
+  #    backends:
+  #      endpoints: "...,{model-name}:http://{model-name}-predictor.{namespace}.svc.cluster.local:80"
+  #
+  # 2. Create routing policy via CLI:
+  #      ai-aas-cli routing policy create --global \
+  #        --model llama-3-1-8b-instruct-vllm-ada \
+  #        --backends llama-3-1-8b-instruct-vllm-ada:100
+  #
+  # Backend type: openai (default, no --backend-type flag needed)
+  apiRouter:
+    ada:
+      backendType: openai
+      healthPath: /health
+    blackwell:
+      backendType: openai
+      healthPath: /health
