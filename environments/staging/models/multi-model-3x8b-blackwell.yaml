@@ -35,7 +35,7 @@ spec:
   description: "3 x 7-8B LLM models on single RTX 6000 Blackwell GPU"
   s3Bucket: ai-aas
   s3Key: models/blackwell/multi-model-3x8b
-  enabled: true
+  enabled: false
   runtime: triton
   runtimeName: kserve-triton-blackwell
   modelType: text
@@ -49,7 +49,7 @@ spec:
   # Multi-model configuration
   # Triton will load all 3 models explicitly with model-control-mode=explicit
   multiModel:
-    enabled: true
+    enabled: false
     models:
       - name: llama-3-1-8b-instruct
         modelID: meta-llama/Llama-3.1-8B-Instruct
