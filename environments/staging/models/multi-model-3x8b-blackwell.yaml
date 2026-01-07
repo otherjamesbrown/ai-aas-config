@@ -1,20 +1,22 @@
 # AIModel CR for Multi-Model 3x8B on Blackwell (Staging)
 #
-# PLACEHOLDER for future true multi-model deployment using Triton's
-# model-control-mode=explicit to serve multiple models from one InferenceService.
+# TRUE MULTI-MODEL SERVING: 3 x 7-8B LLM models on single RTX 6000 Blackwell GPU
+# All models load in a single Triton pod with shared GPU memory.
 #
-# Currently DISABLED - individual models deployed as separate AIModels:
-# - llama-3-1-8b-instruct-triton-blackwell (enabled)
-# - mistral-7b-instruct-triton-blackwell (disabled)
-# - qwen2-7b-instruct-triton-blackwell (disabled)
+# Models (each with full ensemble structure):
+# - llama_ensemble (Llama 3.1 8B Instruct)
+# - mistral_ensemble (Mistral 7B Instruct v0.3)
+# - qwen_ensemble (Qwen2 7B Instruct)
 #
-# Only one model can use the Blackwell GPU at a time with the current setup.
-# True multi-model serving requires operator support for multiModel field.
+# VRAM Allocation:
+# - Total VRAM: 96 GB
+# - Engine memory: ~43 GB (3 models)
+# - KV cache: 0.28 fraction per model (total ~0.84)
 #
-# Engine builds completed 2026-01-07 with full Triton ensemble structure at:
-# - s3://ai-aas/models/blackwell/multi-model-3x8b/llama-3.1-8b-instruct/
-# - s3://ai-aas/models/blackwell/multi-model-3x8b/mistral-7b-instruct/
-# - s3://ai-aas/models/blackwell/multi-model-3x8b/qwen2-7b-instruct/
+# Inference endpoints:
+# - /v2/models/llama_ensemble/infer
+# - /v2/models/mistral_ensemble/infer
+# - /v2/models/qwen_ensemble/infer
 #
 apiVersion: aimodel.ai-aas.io/v1alpha1
 kind: AIModel
@@ -34,8 +36,8 @@ spec:
   displayName: "Multi-Model 3x8B (Blackwell)"
   description: "3 x 7-8B LLM models on single RTX 6000 Blackwell GPU"
   s3Bucket: ai-aas
-  s3Key: models/blackwell/multi-model-3x8b
-  enabled: false
+  s3Key: models/blackwell/multi-model-3x8b-combined
+  enabled: true
   runtime: triton
   runtimeName: kserve-triton-blackwell
   modelType: text
@@ -43,25 +45,6 @@ spec:
   maxReplicas: 1
   deployment:
     deploymentMode: RawDeployment
-  # Multi-model configuration (requires operator support)
-  multiModel:
-    enabled: false
-    models:
-      - name: llama-3-1-8b-instruct
-        modelID: meta-llama/Llama-3.1-8B-Instruct
-        s3Key: models/blackwell/multi-model-3x8b/llama-3.1-8b-instruct
-        kvCacheFraction: "0.28"
-        maxBatchSize: 32
-      - name: mistral-7b-instruct
-        modelID: mistralai/Mistral-7B-Instruct-v0.3
-        s3Key: models/blackwell/multi-model-3x8b/mistral-7b-instruct
-        kvCacheFraction: "0.28"
-        maxBatchSize: 32
-      - name: qwen2-7b-instruct
-        modelID: Qwen/Qwen2-7B-Instruct
-        s3Key: models/blackwell/multi-model-3x8b/qwen2-7b-instruct
-        kvCacheFraction: "0.28"
-        maxBatchSize: 32
   resources:
     requests:
       cpu: "8"
