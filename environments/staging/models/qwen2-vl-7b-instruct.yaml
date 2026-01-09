@@ -47,6 +47,7 @@ spec:
   runtimeArgs:
     - --max-input-tokens=4096
     - --max-total-tokens=8192
+    - --max-batch-size=1
   runtimeEnv:
     - name: PREFIX_CACHING
       value: "0"
